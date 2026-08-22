@@ -1,4 +1,4 @@
-name: Kingdom of Elaria Iname: Kingdom of Elaria I
+name: Kingdom of Elaria I
 
 on:
   workflow_dispatch:
@@ -7,7 +7,8 @@ on:
       - main
 
 jobs:
-  build:
+  build-windows:
+    name: Build Kingdom of Elaria I
     runs-on: windows-latest
 
     steps:
@@ -22,43 +23,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build Kingdom of Elaria I
+      - name: Build Windows
         run: npm run dist
 
-      - name: Upload Windows build
-        uses: actions/upload-artifact@v4
-        with:
-          name: Kingdom of Elaria I
-          path: release/*.exe
-          if-no-files-found: error
-
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-
-jobs:
-  build:
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build Kingdom of Elaria I
-        run: npm run dist
-
-      - name: Upload Kingdom of Elaria I
+      - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
         with:
           name: Kingdom of Elaria I
