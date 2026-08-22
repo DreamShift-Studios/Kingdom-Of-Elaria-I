@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#100c19">
+  <meta name="description" content="Elaria: Rise Against Velymoor — a complete pixel-art action RPG.">
+  <title>Elaria: Rise Against Velymoor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="game-shell" aria-label="Elaria: Rise Against Velymoor">
+    <canvas id="game-canvas" width="960" height="540" aria-label="Game world"></canvas>
+    <div id="vignette" aria-hidden="true"></div>
+    <div id="pixel-noise" aria-hidden="true"></div>
+
+    <section id="hud" class="hidden" aria-label="Player status">
+      <div class="hud-card health-card">
+        <div class="portrait-mini"><span>⚔</span></div>
+        <div class="health-wrap">
+          <div class="hud-label"><span id="hud-player-name">Hero</span><span id="hp-text">100 / 100</span></div>
+          <div class="bar health"><div id="hp-fill" class="bar-fill"></div></div>
+          <div class="xp-line"><span>LV <b id="level-value">1</b></span><div class="bar xp"><div id="xp-fill" class="bar-fill"></div></div></div>
+        </div>
+      </div>
+      <div class="hud-card resource-card">
+        <span class="resource coin"><i></i><b id="gold-value">0</b></span>
+        <span class="resource potion">◆ <b id="potion-value">0</b></span>
+        <span class="resource weapon">⚔ <b id="weapon-value">Unarmed</b></span>
+      </div>
+      <div class="hud-card quest-card">
+        <span class="quest-kicker">CURRENT QUEST</span>
+        <span id="quest-objective">Speak with the wizard</span>
+      </div>
+    </section>
+
+    <aside id="minimap" class="minimap hidden" aria-label="Area minimap">
+      <canvas id="minimap-canvas" width="150" height="92"></canvas>
+      <div><span id="minimap-area">ELARIA</span><b id="completion-value">0%</b></div>
+    </aside>
+    <div id="combo-counter" class="combo-counter hidden"><b>3</b><span>HIT COMBO</span></div>
+
+    <div id="boss-hud" class="boss-hud hidden" aria-live="polite">
+      <div class="boss-heading">
+        <div class="boss-identity"><span id="boss-name">The Creaking One</span><small id="boss-subtitle">Corrupted Guardian</small></div>
+        <small id="boss-phase">PHASE I</small>
+      </div>
+      <div class="bar boss"><div id="boss-hp-chip" class="boss-hp-chip"></div><div id="boss-hp-fill" class="bar-fill"></div><i class="boss-bar-glow"></i></div>
+      <div id="boss-final-indicator" class="boss-final-indicator hidden">SURVIVE THE COLLAPSE</div>
+    </div>
+
+    <div id="area-banner" class="area-banner hidden"><small>ENTERING</small><strong>Kingdom of Elaria</strong></div>
+    <div id="boss-intro-title" class="boss-intro-title hidden"><small>FINAL BOSS</small><strong>VELYMOOR</strong><span>Bearer of the Orb of Chaos</span></div>
+    <div id="ending-whiteout" class="ending-whiteout" aria-hidden="true"></div>
+    <div id="interact-prompt" class="interact-prompt hidden"><kbd>E</kbd><span>Interact</span></div>
+    <div id="save-indicator" class="save-indicator hidden"><span></span> Saving…</div>
+
+    <section id="main-menu" class="screen menu-screen active" aria-label="Main menu">
+      <div class="menu-emblem" aria-hidden="true"><span class="orb"></span><span class="blade"></span></div>
+      <div class="title-lockup">
+        <p class="eyebrow">A TALE OF THE LAST KINGDOM</p>
+        <h1>ELARIA</h1>
+        <div class="title-rule"><i></i><span>RISE AGAINST VELYMOOR</span><i></i></div>
+        <span class="remaster-badge">REMASTERED EDITION</span>
+      </div>
+      <nav class="menu-actions" aria-label="Game options">
+        <button id="new-game-btn" class="pixel-btn primary">New Game</button>
+        <button id="continue-btn" class="pixel-btn">Continue</button>
+        <button id="main-settings-btn" class="pixel-btn">Settings</button>
+        <button id="credits-btn" class="pixel-btn">Credits</button>
+      </nav>
+      <p class="menu-hint">WASD / ARROWS TO MOVE · E TO INTERACT · SPACE TO ATTACK</p>
+      <p class="version">v2.0 · REMASTERED EDITION</p>
+    </section>
+
+    <section id="name-panel" class="screen hidden" aria-labelledby="name-title">
+      <div class="modal compact creation-card">
+        <span class="modal-rune">✦</span>
+        <p class="eyebrow">YOUR STORY BEGINS</p>
+        <h2 id="name-title">What is your name?</h2>
+        <p>The people of Elaria will remember it.</p>
+        <label class="field-label" for="player-name-input">Hero's name</label>
+        <input id="player-name-input" class="pixel-input" maxlength="18" autocomplete="off" value="Aren" aria-label="Hero name">
+        <label class="field-label" for="new-difficulty">Difficulty</label>
+        <select id="new-difficulty" class="pixel-input">
+          <option value="easy">Easy — A forgiving journey</option>
+          <option value="normal" selected>Normal — The intended adventure</option>
+          <option value="hard">Hard — Extreme challenge</option>
+          <option value="nightmare" id="nightmare-new-option">Nightmare — The realm hunts you</option>
+        </select>
+        <div class="button-row">
+          <button class="pixel-btn" data-close="name-panel">Back</button>
+          <button id="begin-btn" class="pixel-btn primary">Begin Journey</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="pause-panel" class="screen hidden" aria-labelledby="pause-title">
+      <div class="modal pause-card">
+        <p class="eyebrow">THE WORLD WAITS</p>
+        <h2 id="pause-title">Paused</h2>
+        <div class="pause-grid">
+          <nav class="pause-actions">
+            <button id="resume-btn" class="pixel-btn primary">Resume</button>
+            <button data-open-panel="inventory" class="pixel-btn">Inventory <kbd>I</kbd></button>
+            <button data-open-panel="quests" class="pixel-btn">Quest Log <kbd>L</kbd></button>
+            <button data-open-panel="stats" class="pixel-btn">Character <kbd>C</kbd></button>
+            <button data-open-panel="skills" class="pixel-btn">Skill Tree <kbd>K</kbd></button>
+            <button data-open-panel="crafting" class="pixel-btn">Crafting <kbd>R</kbd></button>
+            <button data-open-panel="map" class="pixel-btn">World Map <kbd>M</kbd></button>
+            <button data-open-panel="codex" class="pixel-btn">Codex <kbd>B</kbd></button>
+            <button data-open-panel="settings" class="pixel-btn">Settings</button>
+            <button id="pause-save-btn" class="pixel-btn">Save Game</button>
+            <button id="pause-main-btn" class="pixel-btn danger">Return to Title</button>
+          </nav>
+          <div class="controls-card">
+            <h3>Controls</h3>
+            <dl>
+              <div><dt>Move</dt><dd>WASD / Arrows</dd></div>
+              <div><dt>Attack / Charge</dt><dd>Space / Left Click</dd></div>
+              <div><dt>Dodge</dt><dd>Shift</dd></div>
+              <div><dt>Interact</dt><dd>E</dd></div>
+              <div><dt>Potion</dt><dd>Q</dd></div>
+              <div><dt>Inventory</dt><dd>I</dd></div>
+              <div><dt>Quest Log</dt><dd>L</dd></div>
+              <div><dt>Map / Skills</dt><dd>M / K</dd></div>
+              <div><dt>Craft / Codex</dt><dd>R / B</dd></div>
+              <div><dt>Pause</dt><dd>Escape</dd></div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="inventory-panel" class="screen side-screen hidden" aria-labelledby="inventory-title">
+      <div class="modal journal wide">
+        <header class="modal-header">
+          <div><p class="eyebrow">TRAVELER'S PACK</p><h2 id="inventory-title">Inventory</h2></div>
+          <div class="inventory-tools"><select id="inventory-sort" class="pixel-input" aria-label="Sort inventory"><option value="type">Sort: Type</option><option value="rarity">Sort: Rarity</option><option value="name">Sort: Name</option></select><button id="sell-junk-btn" class="micro-btn">Sell Junk</button></div>
+          <button class="icon-btn panel-close" aria-label="Close inventory">×</button>
+        </header>
+        <div class="inventory-layout">
+          <aside>
+            <h3>Equipped</h3>
+            <div id="equipment-slots" class="equipment-slots"></div>
+            <div class="mini-stats" id="inventory-mini-stats"></div>
+          </aside>
+          <div class="bag-column">
+            <div id="inventory-tabs" class="tabs">
+              <button class="active" data-category="all">All</button>
+              <button data-category="weapon">Weapons</button>
+              <button data-category="armor">Armor</button>
+              <button data-category="consumable">Supplies</button>
+              <button data-category="material">Materials</button>
+              <button data-category="quest">Quest</button>
+            </div>
+            <div id="inventory-list" class="item-grid" role="listbox"></div>
+          </div>
+          <aside id="item-details" class="item-details"><p class="muted">Select an item to inspect it.</p></aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="quests-panel" class="screen side-screen hidden" aria-labelledby="quests-title">
+      <div class="modal journal wide">
+        <header class="modal-header">
+          <div><p class="eyebrow">THE ROAD AHEAD</p><h2 id="quests-title">Quest Log</h2></div>
+          <button class="icon-btn panel-close" aria-label="Close quest log">×</button>
+        </header>
+        <div id="quest-list" class="quest-list"></div>
+      </div>
+    </section>
+
+    <section id="stats-panel" class="screen side-screen hidden" aria-labelledby="stats-title">
+      <div class="modal journal medium">
+        <header class="modal-header">
+          <div><p class="eyebrow">CHOSEN OF ELARIA</p><h2 id="stats-title">Character</h2></div>
+          <button class="icon-btn panel-close" aria-label="Close character stats">×</button>
+        </header>
+        <div id="stats-content" class="stats-content"></div>
+      </div>
+    </section>
+
+    <section id="skills-panel" class="screen side-screen hidden" aria-labelledby="skills-title">
+      <div class="modal journal wide remaster-panel">
+        <header class="modal-header">
+          <div><p class="eyebrow">SHAPE YOUR DESTINY</p><h2 id="skills-title">Skill Tree</h2></div>
+          <div class="skill-points"><b id="skill-points">0</b><span>SKILL POINTS</span></div>
+          <button class="icon-btn panel-close" aria-label="Close skill tree">×</button>
+        </header>
+        <div id="skills-list" class="skills-list"></div>
+      </div>
+    </section>
+
+    <section id="crafting-panel" class="screen side-screen hidden" aria-labelledby="crafting-title">
+      <div class="modal journal wide remaster-panel">
+        <header class="modal-header">
+          <div><p id="crafting-station" class="eyebrow">CAMP KITCHEN</p><h2 id="crafting-title">Crafting</h2></div>
+          <div class="shop-wallet"><span class="coin-dot"></span><b id="crafting-gold">0</b></div>
+          <button class="icon-btn panel-close" aria-label="Close crafting">×</button>
+        </header>
+        <div id="recipe-list" class="recipe-list"></div>
+      </div>
+    </section>
+
+    <section id="codex-panel" class="screen side-screen hidden" aria-labelledby="codex-title">
+      <div class="modal journal wide remaster-panel">
+        <header class="modal-header">
+          <div><p class="eyebrow">KNOWLEDGE OF THE REALM</p><h2 id="codex-title">Elarian Codex</h2></div>
+          <button class="icon-btn panel-close" aria-label="Close codex">×</button>
+        </header>
+        <div id="codex-tabs" class="tabs codex-tabs"><button class="active" data-codex="bestiary">Bestiary</button><button data-codex="lore">Lore</button><button data-codex="achievements">Achievements</button></div>
+        <div id="codex-content" class="codex-content"></div>
+      </div>
+    </section>
+
+    <section id="map-panel" class="screen side-screen hidden" aria-labelledby="map-title">
+      <div class="modal journal wide remaster-panel map-card">
+        <header class="modal-header">
+          <div><p class="eyebrow">ROADS OF A BROKEN WORLD</p><h2 id="map-title">World Map</h2></div>
+          <button class="icon-btn panel-close" aria-label="Close world map">×</button>
+        </header>
+        <div class="map-layout"><canvas id="world-map-canvas" width="550" height="210" aria-label="Map of the realm"></canvas><div id="travel-list" class="travel-list"></div></div>
+      </div>
+    </section>
+
+    <section id="shop-panel" class="screen side-screen hidden" aria-labelledby="shop-title">
+      <div class="modal journal wide shop-card">
+        <header class="modal-header">
+          <div><p class="eyebrow">BUY · SELL · PREPARE</p><h2 id="shop-title">Elaria Provisioner</h2></div>
+          <div class="shop-wallet"><span class="coin-dot"></span><b id="shop-gold">0</b></div>
+          <button id="shop-close" class="icon-btn" aria-label="Close shop">×</button>
+        </header>
+        <div id="shop-list" class="shop-list"></div>
+      </div>
+    </section>
+
+    <section id="settings-panel" class="screen hidden" aria-labelledby="settings-title">
+      <div class="modal settings-card">
+        <header class="modal-header">
+          <div><p class="eyebrow">TAILOR THE JOURNEY</p><h2 id="settings-title">Settings</h2></div>
+          <button class="icon-btn panel-close" aria-label="Close settings">×</button>
+        </header>
+        <div class="settings-list">
+          <label><span>Music volume <output id="music-output">55%</output></span><input id="music-volume" type="range" min="0" max="100" value="55"></label>
+          <label><span>Sound effects <output id="sfx-output">75%</output></span><input id="sfx-volume" type="range" min="0" max="100" value="75"></label>
+          <label class="toggle-row"><span>Screen shake<small>Impact motion during heavy attacks</small></span><input id="screen-shake" type="checkbox" checked></label>
+          <label><span>UI scale <output id="ui-scale-output">100%</output></span><input id="ui-scale" type="range" min="75" max="135" value="100"></label>
+          <label><span>Particle density</span><input id="particle-density" type="range" min="25" max="150" value="100"></label>
+          <label><span>Color vision mode</span><select id="colorblind-mode" class="pixel-input"><option value="none">Standard palette</option><option value="deuter">Deuteranopia support</option><option value="protan">Protanopia support</option><option value="tritan">Tritanopia support</option></select></label>
+          <label class="toggle-row"><span>High contrast<small>Strengthens UI and world separation</small></span><input id="high-contrast" type="checkbox"></label>
+          <label class="toggle-row"><span>Reduced flashes<small>Softens full-screen combat flashes</small></span><input id="reduced-flashes" type="checkbox"></label>
+          <label><span>Difficulty</span><select id="difficulty-select" class="pixel-input"><option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="hard">Hard — Extreme</option><option value="nightmare" id="nightmare-settings-option">Nightmare</option></select></label>
+          <div class="bindings-card"><h3>Rebind Controls</h3><div id="bindings-list" class="bindings-list"><span>Move Up</span><button data-bind="up">W</button><span>Move Down</span><button data-bind="down">S</button><span>Move Left</span><button data-bind="left">A</button><span>Move Right</span><button data-bind="right">D</button><span>Attack</span><button data-bind="attack">SPACE</button><span>Dodge</span><button data-bind="dash">SHIFT</button><span>Interact</span><button data-bind="interact">E</button><span>Inventory</span><button data-bind="inventory">I</button><span>Use Potion</span><button data-bind="potion">Q</button><span>Pause</span><button data-bind="pause">ESCAPE</button><span>World Map</span><button data-bind="map">M</button><span>Skill Tree</span><button data-bind="skills">K</button><span>Crafting</span><button data-bind="crafting">R</button><span>Codex</span><button data-bind="codex">B</button><span>Quest Log</span><button data-bind="quests">L</button><span>Character</span><button data-bind="stats">C</button></div></div>
+          <button id="fullscreen-btn" class="pixel-btn">Toggle Fullscreen</button>
+          <button id="reset-save-btn" class="pixel-btn danger">Reset Save Data</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="credits-panel" class="screen hidden" aria-labelledby="credits-title">
+      <div class="modal compact credits-card">
+        <p class="eyebrow">DREAMSHIFT STUDIOS</p>
+        <h2 id="credits-title">Credits</h2>
+        <p><b>Kingdom of Elaria: Rise Against Velymoor</b></p>
+        <p>Developed by <b>DreamShift Team</b></p>
+        <p class="muted">Every legend begins with a dream.</p>
+        <div class="button-row">
+          <button id="roll-credits-btn" class="pixel-btn primary">Roll Credits</button>
+          <button class="pixel-btn" data-close="credits-panel">Return</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="credits-roll" class="credits-roll hidden" aria-label="Kingdom of Elaria credits">
+      <div class="credits-sky" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="credits-vignette" aria-hidden="true"></div>
+      <div id="credits-scroll" class="credits-scroll">
+        <p class="credits-kicker">DREAMSHIFT STUDIOS</p>
+        <h1>KINGDOM OF ELARIA</h1>
+        <h2>Rise Against Velymoor</h2>
+        <div class="credits-divider">◆</div>
+
+        <p class="credits-role">Developed By</p><h3>DreamShift Team</h3>
+        <p class="credits-role">Programming</p><h3>DreamShift Team</h3>
+        <p class="credits-role">Game Design</p><h3>DreamShift Team</h3>
+        <p class="credits-role">Story &amp; World Design</p><h3>DreamShift Team</h3>
+        <p class="credits-role">Gameplay Design</p><h3>DreamShift Team</h3>
+        <p class="credits-role">Level &amp; World Design</p><h3>DreamShift Team</h3>
+        <p class="credits-role">Enemy &amp; Boss Design</p><h3>DreamShift Team</h3>
+        <p class="credits-role">RPG Systems</p><h3>DreamShift Team</h3>
+        <p class="credits-role">Music &amp; Audio</p><h3>DreamShift Studios</h3>
+        <p class="credits-role">UI &amp; User Experience</p><h3>DreamShift Team</h3>
+        <p class="credits-role">Quality Assurance &amp; Testing</p><h3>DreamShift Team</h3>
+
+        <div class="credits-divider">◆</div>
+        <p class="credits-role">Powered By</p>
+        <h3>HTML5 · CSS3 · JavaScript<br>HTML5 Canvas · Web Audio API</h3>
+
+        <div class="credits-divider">◆</div>
+        <p class="credits-thanks">Special thanks to our families, friends, and every player who supported this adventure.</p>
+        <p class="credits-thanks">Thank you for exploring the Kingdom of Elaria.</p>
+
+        <div class="credits-quote">“Every legend begins with a dream.”</div>
+        <p class="credits-kicker">DREAMSHIFT STUDIOS</p>
+
+        <div class="credits-teaser">
+          <small>THE JOURNEY CONTINUES</small>
+          <h2>KINGDOM OF ELARIA II</h2>
+          <h3>Echoes of the Void</h3>
+          <p>“The Orb of Chaos may be gone... but something far older has awakened.”</p>
+        </div>
+
+        <p class="credits-copyright">© 2026 DreamShift Studios. All Rights Reserved.</p>
+        <p class="credits-end">THANK YOU FOR PLAYING</p>
+      </div>
+      <button id="skip-credits-btn" class="credits-skip">Skip Credits</button>
+    </section>
+
+    <section id="dialogue-box" class="dialogue hidden" aria-live="polite">
+      <div id="dialogue-portrait" class="dialogue-portrait" aria-hidden="true"></div>
+      <div class="dialogue-content">
+        <h3 id="dialogue-name">The Wizard</h3>
+        <p id="dialogue-text"></p>
+        <div id="dialogue-choices" class="dialogue-choices"></div>
+      </div>
+      <span id="dialogue-next" class="dialogue-next">▼</span>
+    </section>
+
+    <section id="gameover-panel" class="screen hidden" aria-labelledby="gameover-title">
+      <div class="modal compact end-card gameover-card">
+        <p class="eyebrow">THE DARKNESS CLOSES IN</p>
+        <h2 id="gameover-title">You Have Fallen</h2>
+        <p id="gameover-message">Elaria still needs its hero.</p>
+        <button id="retry-btn" class="pixel-btn primary">Rise Again</button>
+        <button id="gameover-main-btn" class="pixel-btn">Return to Title</button>
+      </div>
+    </section>
+
+    <section id="victory-panel" class="screen hidden" aria-labelledby="victory-title">
+      <div class="modal victory-card">
+        <p class="eyebrow">THE ORB IS SHATTERED</p>
+        <h2 id="victory-title">Dawn Returns to Elaria</h2>
+        <p id="victory-copy" class="victory-copy"></p>
+        <div id="victory-summary" class="victory-summary"></div>
+        <div class="button-row">
+          <button id="watch-credits-btn" class="pixel-btn primary">Watch Credits</button>
+          <button id="free-explore-btn" class="pixel-btn">Free Exploration</button>
+          <button id="new-game-plus-btn" class="pixel-btn">New Game +</button>
+          <button id="victory-main-btn" class="pixel-btn">Title Screen</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="confirm-panel" class="screen hidden" aria-label="Confirm action">
+      <div class="modal compact confirm-card">
+        <h2 id="confirm-title">Are you certain?</h2>
+        <p id="confirm-text">This cannot be undone.</p>
+        <div class="button-row"><button id="confirm-no" class="pixel-btn">Cancel</button><button id="confirm-yes" class="pixel-btn danger">Confirm</button></div>
+      </div>
+    </section>
+
+    <div id="transition-screen" class="transition-screen" aria-hidden="true"><span></span></div>
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+    <div id="boot-error" class="boot-error hidden"><h2>The realm could not awaken.</h2><p>Reload the page to try again.</p></div>
+  </main>
+
+  <script>
+    /* Local files cannot import ES modules in several browsers. This loader uses
+       classic scripts for file:// and the same modules as ES modules when hosted. */
+    (() => {
+      const files = [
+        'items','inventory','quests','save','audio','particles','player','enemies',
+        'bosses','combat','dialogue','worlds','progression','shop','ui','game','remaster','nightmare','main'
+      ];
+      let i = 0;
+      const loadNext = () => {
+        if (i >= files.length) return;
+        const script = document.createElement('script');
+        script.src = `js/${files[i++]}.js`;
+        if (location.protocol !== 'file:') script.type = 'module';
+        script.onload = loadNext;
+        script.onerror = () => document.getElementById('boot-error').classList.remove('hidden');
+        document.body.appendChild(script);
+      };
+      loadNext();
+    })();
+  </script>
+</body>
+</html>

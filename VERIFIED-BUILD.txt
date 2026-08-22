@@ -1,0 +1,20 @@
+KINGDOM OF ELARIA I — VERIFIED BUILD
+Version: 1.3.0
+Studio: DreamShift Studios
+
+Verification performed on 2026-08-21:
+- ZIP integrity: PASS
+- package.json parse: PASS
+- Electron main file present: PASS
+- GitHub Actions Windows workflow present: PASS
+- JavaScript syntax checks (electron-main.js, all js/*.js, tests/*.js): PASS
+- Integration smoke test: PASS
+- Real Chromium renderer boot test: PASS
+- Main menu displayed: PASS
+- New Game screen opened: PASS
+- Normal difficulty game started: PASS
+- HUD/canvas/player loaded: PASS
+- Browser page errors: 0
+- Browser console errors: 0
+
+The project includes the Windows/Electron build configuration and GitHub Actions workflow.

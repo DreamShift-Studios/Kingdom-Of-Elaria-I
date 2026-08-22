@@ -1,0 +1,24 @@
+KINGDOM OF ELARIA - NIGHTMARE UPDATE
+DreamShift Studios
+
+GITHUB BUILD (NO NODE.JS NEEDED ON YOUR PC)
+1. Create/open your GitHub repository.
+2. Upload EVERYTHING inside this folder to the repository root.
+3. Make sure package.json is visible on the first page of the repository.
+4. Open the Actions tab.
+5. Select "Build Kingdom of Elaria for Windows".
+6. Click Run workflow.
+7. Wait for a green check.
+8. Open the finished run and download the artifact:
+   Kingdom-of-Elaria-Nightmare-Windows
+9. Extract the downloaded ZIP.
+10. Open the portable EXE or the Setup EXE.
+
+LOCAL BUILD (ONLY IF NODE.JS IS INSTALLED)
+npm install
+npm start
+npm run dist
+
+CONTROLS
+F11 - Toggle fullscreen
+Escape - Leave fullscreen / game pause behavior
